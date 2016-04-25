@@ -1,0 +1,22 @@
+{
+    "name": "logikostech/auth",
+    "description": "User authentication manager built on phalcon",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Todd Empcke",
+            "email": "tempcke@logikostech.net"
+        }
+    ],
+    "require": {
+        "php": ">=5.4",
+        "ext-phalcon": "2.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Logikos\\Auth\\": "src/",
+            "Logikos\\Tests\\": "tests/"
+        }
+    }
+}
