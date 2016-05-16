@@ -37,14 +37,8 @@ class Manager extends Component implements EventsAwareInterface {
       return $this->getEventsManager()->fire($eventType,$this,$data);
     }
   }
-  protected function _verifyConfig($config) {
-    if (!($config instanceof \Phalcon\Config))
-      throw new Exception('Config should be an instance of Phalcon\Config');
-    
-    
-    $this->authconf = $config;
-  }
-  protected function _veryfyPhalconDiServices() {
+  
+  protected function _verifyPhalconDiServices()  {
 
     if (!($this->getDI() instanceof DiInterface))
       throw new Exception('To use please load Logikos\Auth\Manager as a Phalcon Di Service');

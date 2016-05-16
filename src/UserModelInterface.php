@@ -1,7 +1,7 @@
 <?php
+namespace Logikos\Auth;
 
 interface UserModelInterface {
-  public static getUsernameField();
-  public static getPasswordField();
-  
+  public static function getUsernameField();
+  public static function getPasswordField();
 }
