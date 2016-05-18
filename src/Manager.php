@@ -10,7 +10,7 @@ use Phalcon\Mvc\User\Component;
 use Phalcon\Events\EventsAwareInterface;
 use Phalcon\Session\AdapterInterface AS SessionAdapter;
 
-class Manager extends Component implements EventsAwareInterface {
+class Manager extends Component {
   
   /**
    * @var \Phalcon\Config
