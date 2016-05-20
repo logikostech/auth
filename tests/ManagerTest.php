@@ -3,6 +3,7 @@
 namespace Logikos\Tests\Auth;
 
 use Logikos\Auth\Manager as AuthManager;
+use Logikos\Auth\Manager;
 
 class ManagerTest extends \PHPUnit_Framework_TestCase {
   static $di;
@@ -14,7 +15,9 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     static::$di = \Phalcon\Di::getDefault();
   }
   
-  public function testFoo() {
-    $this->assertTrue(true);
+  public function testInvalidUserModelName() {
+    $this->setExpectedException('Exception');
+    $userModelName = null;
+    new Manager($userModelName);
   }
 }

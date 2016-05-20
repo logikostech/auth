@@ -27,7 +27,15 @@ class Manager extends Component {
    */
   protected $security;
   
+  protected $_usermodelinterface = 'Logikos\Auth\UserModelInterface';
+  
   public function __construct($userModelName) {
+    if (!is_string($userModelName) || !class_exists($userModelName))
+      throw new Exception('Constructor requires a user model name');
+    
+    if (!is_subclass_of($userModelName,$this->_usermodelinterface))
+      throw new \Phalcon\Mvc\Model\Exception("Model {$userModelName} must implement {$this->_usermodelinterface}");
+    
     //$this->_verifyConfig($config);
     $this->_verifyPhalconDiServices();
   }
