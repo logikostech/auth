@@ -9,8 +9,11 @@ use Phalcon\Security;
 use Phalcon\Mvc\User\Component;
 use Phalcon\Events\EventsAwareInterface;
 use Phalcon\Session\AdapterInterface AS SessionAdapter;
+use Phalcon\Mvc\User\Module;
 
-class Manager extends Component {
+class Manager extends Module {
+  use \Logikos\UserOptionTrait;
+  use \Logikos\Events\EventsAwareTrait;
   
   /**
    * @var \Phalcon\Config
@@ -27,35 +30,42 @@ class Manager extends Component {
    */
   protected $security;
   
-  protected $_usermodelinterface = 'Logikos\Auth\UserModelInterface';
+  const USER_MODEL_INTERFACE = 'Logikos\Auth\UserModelInterface';
+    
+  public function __construct($options) {
+    if (is_string($options))
+      $options = ['model_name'=>$options];
+    
+    $this->mergeUserOptions($options);
+    $this->_validateUserOptions();
+  }
   
-  public function __construct($userModelName) {
+  
+  protected function _validateUserOptions() {
+    $userModelName = $this->getUserOption('model_name');
+    
     if (!is_string($userModelName) || !class_exists($userModelName))
       throw new Exception('Constructor requires a user model name');
     
-    if (!is_subclass_of($userModelName,$this->_usermodelinterface))
-      throw new \Phalcon\Mvc\Model\Exception("Model {$userModelName} must implement {$this->_usermodelinterface}");
-    
-    //$this->_verifyConfig($config);
-    $this->_verifyPhalconDiServices();
+    if (!is_subclass_of($userModelName,static::USER_MODEL_INTERFACE))
+      throw new \Phalcon\Mvc\Model\Exception("Model {$userModelName} must implement {static::USER_MODEL_INTERFACE}");
   }
-  
-  protected function _fireEvent($eventType,$data=null) {
-    if ($this->getEventsManager() instanceof \Phalcon\Events\ManagerInterface) {
-      return $this->getEventsManager()->fire($eventType,$this,$data);
+  public function getSession() {
+    static $session;
+    if (!$session) {
+      $session = $this->getDi()->get('session');
+      if (!$session || !is_a($session,'Phalcon\Session\AdapterInterface'))
+        throw new Exception('Please load a session manager in Phalcon\Di');
     }
+    return $session;
   }
-  
-  protected function _verifyPhalconDiServices()  {
-
-    if (!($this->getDI() instanceof DiInterface))
-      throw new Exception('To use please load Logikos\Auth\Manager as a Phalcon Di Service');
-    
-    if (!isset($this->session) || !($this->session instanceof SessionAdapter))
-      throw new Exception('Please load a session manager in Phalcon\Di');
-    
-    if (!isset($this->security) || !($this->security instanceof Security))
-      throw new Exception('Please load a security manager in Phalcon\Di');
-    
+  public function getSecurity() {
+    static $security;
+    if (!$security) {
+      $security = $this->getDi()->get('session');
+      if (!$security || !is_a($security,'Phalcon\Security'))
+        throw new Exception('Please load a security manager in Phalcon\Di');
+    }
+    return $security;
   }
 }
