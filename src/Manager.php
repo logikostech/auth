@@ -33,22 +33,21 @@ class Manager extends Module {
   const USER_MODEL_INTERFACE = 'Logikos\Auth\UserModelInterface';
     
   public function __construct($options) {
-    if (is_string($options))
-      $options = ['model_name'=>$options];
+    if (is_a($options,self::USER_MODEL_INTERFACE))
+      $options = ['entity'=>$options];
     
-    $this->mergeUserOptions($options);
+    if (is_array($options))
+      $this->mergeUserOptions($options);
+    
     $this->_validateUserOptions();
   }
-  
+  public function getEntity() {
+    return $this->getUserOption('entity');
+  }
   
   protected function _validateUserOptions() {
-    $userModelName = $this->getUserOption('model_name');
-    
-    if (!is_string($userModelName) || !class_exists($userModelName))
-      throw new Exception('Constructor requires a user model name');
-    
-    if (!is_subclass_of($userModelName,static::USER_MODEL_INTERFACE))
-      throw new \Phalcon\Mvc\Model\Exception("Model {$userModelName} must implement {static::USER_MODEL_INTERFACE}");
+    if (!is_a($this->getEntity(),self::USER_MODEL_INTERFACE))
+      throw new InvalidEntityException('Constructor requires '.self::USER_MODEL_INTERFACE);
   }
   public function getSession() {
     static $session;
