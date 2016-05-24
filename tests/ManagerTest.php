@@ -16,8 +16,12 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   }
   
   public function testInvalidUserModelName() {
-    $this->setExpectedException('Exception');
+    $this->setExpectedException('Logikos\Auth\InvalidEntityException');
     $userModelName = null;
     new Manager($userModelName);
+  }
+  
+  public function testStorePassword() {
+    
   }
 }
