@@ -83,10 +83,12 @@ class Manager extends Module {
     return $this->newEntity()->getUserByLogin($login);
   }
   public function newUser($username, $password, $email=null) {
+    $this->userExistsCheck($username, $email);
     $this->securePasswordCheck($password);
     $user = $this->newEntity();
     $user->setUsername($username);
     $user->setPassword($this->getSecurity()->hash($password));
+    $user->addEmail($email);
     $user->save();
   }
   /**
@@ -141,5 +143,13 @@ class Manager extends Module {
   public function securePasswordCheck($password) {
     $pass = new Password($password,$this->getUserOptions());
     $pass->isSecure();
+  }
+  public function userExistsCheck($username, $email=null) {
+    $entity = $this->newEntity();
+    if ($entity->lookupUserByUsername($username))
+      throw new UsernameTakenException();
+    
+    if (!is_null($email) && $entity->lookupUserByEmail($email))
+      throw new EmailInUseException();
   }
 }

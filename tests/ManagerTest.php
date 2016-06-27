@@ -42,36 +42,32 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   }
   
   public function testCanAddUser() {
-    $post = $this->mockUserData();
-    $this->auth->newUser($post['username'],$post['password']);
+    $this->auth->newUser('tempcke','P@ssW0rd');
     
-    $user = $this->auth->getUserByLogin($post['username']);
-    $this->assertEquals($post['username'],$user->getUsername());
+    $user = $this->auth->getUserByLogin('tempcke');
+    $this->assertEquals('tempcke',$user->getUsername());
   }
 
   public function testLoginWithoutTokenFails() {
-    $this->addTestUser();
-    $post = $this->mockUserData();
+    $this->auth->newUser('tempcke','P@ssW0rd');
     $this->setExpectedException('Logikos\Auth\BadTokenException');
-    $this->auth->login($post['username'],$post['password']);
+    $this->auth->login('tempcke','P@ssW0rd');
   }
   
   public function testLoginWithWrongPasswordFails() {
-    $this->addTestUser();
-    $post = $this->mockUserData();
+    $this->auth->newUser('tempcke','P@ssW0rd');
     $this->setExpectedException('Logikos\Auth\Password\Exception');
-    $this->auth->login($post['username'],'incorrectpassword');
+    $this->auth->login('tempcke','incorrectpassword');
   }
 
   public function testCanLogin() {
-    $this->addTestUser();
-    $post  = $this->mockUserData();
+    $this->auth->newUser('tempcke','P@ssW0rd');
     $token = $this->auth->getTokenElement();
     $expected = '<input type="hidden"';
     $this->assertStringStartsWith($expected, $token);
     
     $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
-    $this->auth->login($post['username'], $post['password']);
+    $this->auth->login('tempcke','P@ssW0rd');
   }
 
   public function testNewUserPassMinReqOk() {
@@ -102,20 +98,16 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $this->auth->setUserOption('minpass_symbols',3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd');
   }
-  
-  
-  
-  protected function getUserModel() {
-    return new Users();
+
+  public function testCantCreateUserThatAlreadyExists() {
+    $this->setExpectedException('Logikos\Auth\Exception');
+    $this->auth->newUser('tempcke','P@ssW0rd');
+    $this->auth->newUser('tempcke','P@ssW0rd');
   }
-  protected function addTestUser() {
-    $post = $this->mockUserData();
-    $this->auth->newUser($post['username'],$post['password']);
+  public function testCantCreateUserWithSameEmailAsOtherUserExists() {
+    $this->setExpectedException('Logikos\Auth\Exception');
+    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@domain.com');
+    $this->auth->newUser('johndoe','P@ssW0rd','tempcke@domain.com');
   }
-  protected function mockUserData() {
-    return [
-        'username' => 'tempcke',
-        'password' => 'MyGr3@+P@$s'
-    ];
-  }
+  
 }
