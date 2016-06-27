@@ -73,6 +73,37 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
     $this->auth->login($post['username'], $post['password']);
   }
+
+  public function testNewUserPassMinReqOk() {
+    $this->auth->newUser('tempcke','P@ssW0rd');
+  }
+  public function testNewUserPassToShort() {
+    $this->setExpectedException('Logikos\Auth\Password\ToShortException');
+    $this->auth->setUserOption('minpass_length',10); // default is 8...
+    $this->auth->newUser('tempcke','P@ssW0rd');
+  }
+  public function testNewUserPassWithToFewLowerCaseChars() {
+    $this->setExpectedException('Logikos\Auth\Password\ToFewLowerException');
+    $this->auth->setUserOption('minpass_lowercase',5); // default is 1
+    $this->auth->newUser('tempcke','P@ssW0rd');
+  }
+  public function testNewUserPassWithToFewUpperCaseChars() {
+    $this->setExpectedException('Logikos\Auth\Password\ToFewUpperException');
+    $this->auth->setUserOption('minpass_uppercase',3); // default is 1
+    $this->auth->newUser('tempcke','P@ssW0rd');
+  }
+  public function testNewUserPassWithToFewNumbers() {
+    $this->setExpectedException('Logikos\Auth\Password\ToFewNumbersException');
+    $this->auth->setUserOption('minpass_numbers',3); // default is 1
+    $this->auth->newUser('tempcke','P@ssW0rd');
+  }
+  public function testNewUserPassWithToFewSymbols() {
+    $this->setExpectedException('Logikos\Auth\Password\ToFewSymbolsException');
+    $this->auth->setUserOption('minpass_symbols',3); // default is 1
+    $this->auth->newUser('tempcke','P@ssW0rd');
+  }
+  
+  
   
   protected function getUserModel() {
     return new Users();

@@ -83,6 +83,7 @@ class Manager extends Module {
     return $this->newEntity()->getUserByLogin($login);
   }
   public function newUser($username, $password, $email=null) {
+    $this->securePasswordCheck($password);
     $user = $this->newEntity();
     $user->setUsername($username);
     $user->setPassword($this->getSecurity()->hash($password));
@@ -137,5 +138,8 @@ class Manager extends Module {
     }
     return $security;
   }
-  
+  public function securePasswordCheck($password) {
+    $pass = new Password($password,$this->getUserOptions());
+    $pass->isSecure();
+  }
 }
