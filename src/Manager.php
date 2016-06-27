@@ -3,7 +3,6 @@
 namespace Logikos\Auth;
 
 use Phalcon\Config;
-use Phalcon\Exception;
 use Phalcon\DiInterface;
 use Phalcon\Security;
 use Phalcon\Mvc\User\Component;
@@ -16,12 +15,12 @@ class Manager extends Module {
   use \Logikos\Events\EventsAwareTrait;
   
   /**
-   * @var \Phalcon\Config
+   * @var Config
    */
   protected $authconf;
   
   /**
-   * @var \Phalcon\Session\AdapterInterface
+   * @var SessionAdapter
    */
   protected $session;
   
@@ -31,24 +30,91 @@ class Manager extends Module {
   protected $security;
   
   const USER_MODEL_INTERFACE = 'Logikos\Auth\UserModelInterface';
+  
+  
+  private $_defaultOptions = [
+      'entity' => null,
+      'minpass_length'    => 8,
+      'minpass_lowercase' => 1,
+      'minpass_uppercase' => 1,
+      'minpass_numbers'   => 1,
+      'minpass_symbols'   => 1,
+      'valid_symbols'     => '!@#$%^&*()_+-=~`{[}]|\;:\'",<.>/?'
+  ];
     
-  public function __construct($options) {
+  public function __construct($options=null) {
     if (is_a($options,self::USER_MODEL_INTERFACE))
       $options = ['entity'=>$options];
     
+    $this->_setDefaultUserOptions($this->_defaultOptions);
+    
     if (is_array($options))
       $this->mergeUserOptions($options);
-    
-    $this->_validateUserOptions();
   }
   public function getEntity() {
-    return $this->getUserOption('entity');
+    static $cache = [];
+    $entity = $this->getUserOption('entity');
+    if (!array_key_exists($entity,$cache)) {
+      $cache[$entity] = false;
+      if (!is_null($entity) && class_exists($entity)) {
+        $rc = new \ReflectionClass($entity);
+        if ($rc->implementsInterface(self::USER_MODEL_INTERFACE)) {
+          $cache[$entity] = true;
+        }
+      }
+    }
+    if ($cache[$entity] === false) {
+      throw new InvalidEntityException('Constructor requires '.self::USER_MODEL_INTERFACE);
+    }
+    return $entity;
+  }
+  /**
+   * @return UserModelInterface
+   */
+  public function newEntity() {
+    $entity = $this->getEntity();
+    return new $entity;
+  }
+  /**
+   * @param string $login
+   * @return \Logikos\Auth\UserModleInterface
+   */
+  public function getUserByLogin($login) {
+    return $this->newEntity()->getUserByLogin($login);
+  }
+  public function newUser($username, $password, $email=null) {
+    $user = $this->newEntity();
+    $user->setUsername($username);
+    $user->setPassword($this->getSecurity()->hash($password));
+    $user->save();
+  }
+  /**
+   * 
+   * @param string $login used to lookup user account in entity, perhaps username or email?
+   * @param string $password
+   */
+  public function login($login, $password) {
+    $user = $this->getUserByLogin($login);
+    $passwordCheckPassed = $this->getSecurity()->checkHash($password,$user->getPassword());
+    $tokenCheckPassed    = $this->getSecurity()->checkToken();
+    
+    if (!$passwordCheckPassed)
+      throw new Password\Exception();
+    
+    if (!$tokenCheckPassed)
+      throw new BadTokenException();
   }
   
-  protected function _validateUserOptions() {
-    if (!is_a($this->getEntity(),self::USER_MODEL_INTERFACE))
-      throw new InvalidEntityException('Constructor requires '.self::USER_MODEL_INTERFACE);
+  public function getTokenElement() {
+    $this->tokenkey = $this->getSecurity()->getTokenKey();
+    $this->tokenval = $this->getSecurity()->getToken();
+    $mask = '<input type="hidden" name="%s" value="%s" />';
+    return sprintf($mask, $this->tokenkey, $this->tokenval);
   }
+  /**
+   * @throws Exception
+   * @return \Phalcon\Session
+   */
   public function getSession() {
     static $session;
     if (!$session) {
@@ -58,13 +124,18 @@ class Manager extends Module {
     }
     return $session;
   }
+  /**
+   * @throws Exception
+   * @return \Phalcon\Security
+   */
   public function getSecurity() {
     static $security;
     if (!$security) {
-      $security = $this->getDi()->get('session');
+      $security = $this->getDi()->get('security');
       if (!$security || !is_a($security,'Phalcon\Security'))
         throw new Exception('Please load a security manager in Phalcon\Di');
     }
     return $security;
   }
+  
 }
