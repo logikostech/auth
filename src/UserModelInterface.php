@@ -5,14 +5,16 @@ interface UserModelInterface {
   public function setUsername($username);
   public function setPassword($password);
   
+  public function getUsername();
+  public function getPassword();  
   /**
    * @param string $username
-   * @return Logikos\Auth\UserModelInterface
+   * @return UserModelInterface
    */
-  public function lookupByUsername($username);
+  public function getUserByLogin($login);
   
   /**
-   * @return Logikos\Auth\UserModelInterface
+   * @return UserModelInterface
    */
   public function save();
   public function delete();

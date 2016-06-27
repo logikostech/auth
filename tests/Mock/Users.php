@@ -1,44 +1,56 @@
 <?php
-namespace Logikos\Mock;
+namespace Logikos\Tests\Mock;
 
-class Users implements Logikos\Auth\UserModelInterface {
+use Logikos\Auth\UserModelInterface;
+use Exception;
+
+class Users implements UserModelInterface {
   
-  protected static $db = [];
+  protected static $db = [
+  ];
   protected $record;
   protected $newrec = [
-      'username'=>null,
-      'password'=>null,
-      'user_id'=>null
+      'username' => null,
+      'password' => null,
+      'email'    => null,
+      'user_id'  => null
   ];
   
   public function __construct() {
     $this->resetRecord();
   }
-  public function resetRecord() {
-    $this->record = (object) $this->newrec;
-  }
-  public function loadRecord($data) {
-    $this->record = (object) $data;
-  }
-  public function resetDb() {
-    self::$db = [];
-  }
+
   
-  public function setUsername($username){
+  public function setUsername($username) {
     $this->record->username = $username;
   }
-  public function setPassword($password){
+  public function setPassword($password) {
     $this->record->password = $password;
   }
-  public function lookupByUsername($username){
-    if (isset($db[$username])) {
-      $this->loadRecord($db[$username]);
-      return $this;
+  public function getUsername() {
+    return $this->record->username;
+  }
+  public function getPassword() {
+    return $this->record->password;
+  }
+  public function getUserByLogin($login) {
+    $login  = strtolower($login);
+    $record = null;
+    foreach(self::$db as $user) {
+      if (isset($user->email) && strtolower($user->email) === $login) {
+        $record = $user; break;
+      }
+      elseif (strtolower($user->username) === $login) {
+        $record = $user; break;
+      }
     }
-    return false;
+    return $record
+      ? $this->loadRecord($record)
+      : false;
+      
   }
   public function save(){
-    if (empty($this->record->username) || !empty($this->record->password))
+    if (empty($this->record->username) || empty($this->record->password))
       throw new Exception('username and password are required');
     
     self::$db[$this->record->username] = $this->record;
@@ -47,5 +59,17 @@ class Users implements Logikos\Auth\UserModelInterface {
   public function delete(){
     if (isset(self::$db[$this->record->username]))
       unset(self::$db[$this->record->username]);
+  }
+  
+  
+  public function resetRecord() {
+    $this->record = (object) $this->newrec;
+  }
+  public function loadRecord($data) {
+    $this->record = (object) $data;
+    return $this;
+  }
+  public static function resetDb() {
+    self::$db = [];
   }
 }
