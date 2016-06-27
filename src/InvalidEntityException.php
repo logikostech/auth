@@ -2,6 +2,6 @@
 
 namespace Logikos\Auth;
 
-class InvalidEntityException extends \InvalidArgumentException {
+class InvalidEntityException extends Exception {
   
 }
