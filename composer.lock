@@ -4,16 +4,22 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b91dd7049d736a5c0f2264b6d184191a",
-    "content-hash": "fdbc0988ed25d253080cabfc4ba8bc06",
+    "hash": "8ae7f6c81b9d456d777fcc51dce1592c",
+    "content-hash": "a4a8af8c375aa5a50e2ef7f9867881f1",
     "packages": [
         {
             "name": "logikostech/common",
-            "version": "dev-master",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/logikostech/common",
+                "url": "https://github.com/logikostech/common.git",
                 "reference": "c02a73214eb7b633725b3fdcd4fa2bc64b403450"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/logikostech/common/zipball/c02a73214eb7b633725b3fdcd4fa2bc64b403450",
+                "reference": "c02a73214eb7b633725b3fdcd4fa2bc64b403450",
+                "shasum": ""
             },
             "require": {
                 "ext-phalcon": "2.*",
@@ -26,6 +32,7 @@
                     "Logikos\\Tests\\": "tests/"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -1154,14 +1161,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "logikostech/common": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
         "php": ">=5.4",
-        "ext-phalcon": "2.*"
+        "ext-phalcon": "^2.0"
     },
     "platform-dev": []
 }
