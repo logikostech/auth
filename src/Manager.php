@@ -31,29 +31,39 @@ class Manager extends Module {
   
   const USER_MODEL_INTERFACE = 'Logikos\Auth\UserModelInterface';
   
+  const ATTR_ENTITY          = 10;
+  const ATTR_EMAIL_REQUIRED  = 20;
+  const ATTR_PASS_SYMBOLS    = 100;
+  const ATTR_PASS_MIN_LEN    = 110;
+  const ATTR_PASS_MIN_LOWER  = 111;
+  const ATTR_PASS_MIN_UPPER  = 112;
+  const ATTR_PASS_MIN_NUMBER = 113;
+  const ATTR_PASS_MIN_SYMBOL = 114;
   
-  private $_defaultOptions = [
-      'entity' => null,
-      'minpass_length'    => 8,
-      'minpass_lowercase' => 1,
-      'minpass_uppercase' => 1,
-      'minpass_numbers'   => 1,
-      'minpass_symbols'   => 1,
-      'valid_symbols'     => '!@#$%^&*()_+-=~`{[}]|\;:\'",<.>/?'
+  // this should be readonly but class constants cant be arrays in php < 5.6
+  public static $default_options = [
+      self::ATTR_ENTITY          => null,
+      self::ATTR_EMAIL_REQUIRED  => true,
+      self::ATTR_PASS_MIN_LEN    => 8,
+      self::ATTR_PASS_MIN_LOWER  => 1,
+      self::ATTR_PASS_MIN_UPPER  => 1,
+      self::ATTR_PASS_MIN_NUMBER => 1,
+      self::ATTR_PASS_MIN_SYMBOL => 1,
+      self::ATTR_PASS_SYMBOLS    => '!@#$%^&*()_+-=~`{[}]|\;:\'",<.>/?'
   ];
-    
+  
   public function __construct($options=null) {
     if (is_a($options,self::USER_MODEL_INTERFACE))
-      $options = ['entity'=>$options];
+      $options = [self::ATTR_ENTITY=>$options];
     
-    $this->_setDefaultUserOptions($this->_defaultOptions);
+    $this->_setDefaultUserOptions(self::$default_options);
     
     if (is_array($options))
       $this->mergeUserOptions($options);
   }
   public function getEntity() {
     static $cache = [];
-    $entity = $this->getUserOption('entity');
+    $entity = $this->getUserOption(self::ATTR_ENTITY);
     if (!array_key_exists($entity,$cache)) {
       $cache[$entity] = false;
       if (!is_null($entity) && class_exists($entity)) {
@@ -85,6 +95,7 @@ class Manager extends Module {
   public function newUser($username, $password, $email=null) {
     $this->userExistsCheck($username, $email);
     $this->securePasswordCheck($password);
+    //$this->emailCheck($email);
     $user = $this->newEntity();
     $user->setUsername($username);
     $user->setPassword($this->getSecurity()->hash($password));
@@ -143,6 +154,13 @@ class Manager extends Module {
   public function securePasswordCheck($password) {
     $pass = new Password($password,$this->getUserOptions());
     $pass->isSecure();
+  }
+  public function emailCheck($email) {
+    if ($this->getUserOption(self::ATTR_EMAIL_REQUIRED) && empty($email))
+      throw new Exception('Email address is required');
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL))
+      throw new Exception('Email address is invalid');
   }
   public function userExistsCheck($username, $email=null) {
     $entity = $this->newEntity();

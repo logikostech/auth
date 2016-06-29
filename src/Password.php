@@ -6,19 +6,11 @@ class Password {
   
   protected $password;
   
-  private $_defaultOptions = [
-      'minpass_length'    => 8,
-      'minpass_lowercase' => 1,
-      'minpass_uppercase' => 1,
-      'minpass_numbers'   => 1,
-      'minpass_symbols'   => 1,
-      'valid_symbols'     => '!@#$%^&*()_+-=~`{[}]|\;:\'",<.>/?'
-  ];
 
   public function __construct($password,$options=null) {
     $this->password = $password;
     
-    $this->_setDefaultUserOptions($this->_defaultOptions);
+    $this->_setDefaultUserOptions(Manager::$default_options);
     
     if (is_array($options))
       $this->mergeUserOptions($options);
@@ -45,11 +37,11 @@ class Password {
   }
   public function getMinLimits() {
     return (object) [
-        'length'  => $this->getUserOption('minpass_length'),
-        'numbers' => $this->getUserOption('minpass_numbers'),
-        'symbols' => $this->getUserOption('minpass_symbols'),
-        'upper'   => $this->getUserOption('minpass_uppercase'),
-        'lower'   => $this->getUserOption('minpass_lowercase')
+        'length'  => $this->getUserOption(Manager::ATTR_PASS_MIN_LEN),
+        'numbers' => $this->getUserOption(Manager::ATTR_PASS_MIN_NUMBER),
+        'symbols' => $this->getUserOption(Manager::ATTR_PASS_MIN_SYMBOL),
+        'upper'   => $this->getUserOption(Manager::ATTR_PASS_MIN_UPPER),
+        'lower'   => $this->getUserOption(Manager::ATTR_PASS_MIN_LOWER)
     ];
   }
   public function countDigits($string) {
@@ -63,7 +55,7 @@ class Password {
   }
   public function countSymbols($string) {
     $pattern = '';
-    $symbols = str_split($this->getUserOption('valid_symbols'));
+    $symbols = str_split($this->getUserOption(Manager::ATTR_PASS_SYMBOLS));
     
     foreach($symbols as $char) {
       $pattern .= "\\{$char}";

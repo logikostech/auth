@@ -31,13 +31,13 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
       return $auth;
     },true);
     $this->auth = $this->di->get('auth');
-    $this->auth->setUserOption('entity', $this->modelname);
+    $this->auth->setUserOption(AuthManager::ATTR_ENTITY, $this->modelname);
     \Logikos\Tests\Mock\Users::resetDb();
   }
   
   public function testInvalidUserModelName() {
     $this->setExpectedException('Logikos\Auth\InvalidEntityException');
-    $this->auth->setUserOption('entity', null);
+    $this->auth->setUserOption(AuthManager::ATTR_ENTITY, null);
     $this->auth->getEntity();
   }
   
@@ -75,27 +75,27 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   }
   public function testNewUserPassToShort() {
     $this->setExpectedException('Logikos\Auth\Password\ToShortException');
-    $this->auth->setUserOption('minpass_length',10); // default is 8...
+    $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_LEN,10); // default is 8...
     $this->auth->newUser('tempcke','P@ssW0rd');
   }
   public function testNewUserPassWithToFewLowerCaseChars() {
     $this->setExpectedException('Logikos\Auth\Password\ToFewLowerException');
-    $this->auth->setUserOption('minpass_lowercase',5); // default is 1
+    $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_LOWER,5); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd');
   }
   public function testNewUserPassWithToFewUpperCaseChars() {
     $this->setExpectedException('Logikos\Auth\Password\ToFewUpperException');
-    $this->auth->setUserOption('minpass_uppercase',3); // default is 1
+    $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_UPPER,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd');
   }
   public function testNewUserPassWithToFewNumbers() {
     $this->setExpectedException('Logikos\Auth\Password\ToFewNumbersException');
-    $this->auth->setUserOption('minpass_numbers',3); // default is 1
+    $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_NUMBER,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd');
   }
   public function testNewUserPassWithToFewSymbols() {
     $this->setExpectedException('Logikos\Auth\Password\ToFewSymbolsException');
-    $this->auth->setUserOption('minpass_symbols',3); // default is 1
+    $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_SYMBOL,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd');
   }
 
