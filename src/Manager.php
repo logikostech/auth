@@ -95,7 +95,7 @@ class Manager extends Module {
   public function newUser($username, $password, $email=null) {
     $this->userExistsCheck($username, $email);
     $this->securePasswordCheck($password);
-    //$this->emailCheck($email);
+    $this->emailCheck($email);
     $user = $this->newEntity();
     $user->setUsername($username);
     $user->setPassword($this->getSecurity()->hash($password));
@@ -159,7 +159,7 @@ class Manager extends Module {
     if ($this->getUserOption(self::ATTR_EMAIL_REQUIRED) && empty($email))
       throw new Exception('Email address is required');
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL))
+    if (!is_null($email) && !filter_var($email, FILTER_VALIDATE_EMAIL))
       throw new Exception('Email address is invalid');
   }
   public function userExistsCheck($username, $email=null) {
