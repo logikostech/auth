@@ -4,20 +4,20 @@
     "description": "User authentication manager built on phalcon",
     "type": "library",
     "license": "MIT",
-	"keywords": [
-	    "phalcon",
-	    "plugin",
-	    "logikostech",
-	    "logikos",
-	    "auth"
-	],
+    "keywords": [
+        "phalcon",
+        "plugin",
+        "logikostech",
+        "logikos",
+        "auth"
+    ],
     "authors": [{
         "name": "Todd Empcke",
         "email": "tempcke@logikostech.net"
     }],
     "repositories": [{
-	    "type": "git",
-	    "url": "https://github.com/logikostech/common"
+      "type": "git",
+      "url": "https://github.com/logikostech/common"
     }],
     "require": {
         "php": ">=5.4",
@@ -25,7 +25,7 @@
         "logikostech/common": "dev-master"
     },
     "require-dev": {
-        "phpunit/phpunit": "4.0.*"
+        "phpunit/phpunit": "^4.0"
     },
     "autoload": {
         "psr-4": {
