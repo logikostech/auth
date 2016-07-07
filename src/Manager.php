@@ -52,7 +52,7 @@ class Manager extends Module {
       self::ATTR_PASS_SYMBOLS    => '!@#$%^&*()_+-=~`{[}]|\;:\'",<.>/?'
   ];
   
-  public function __construct($options=null) {
+  public final function __construct($options=null) {
     if (is_a($options,self::USER_MODEL_INTERFACE))
       $options = [self::ATTR_ENTITY=>$options];
     
@@ -60,6 +60,10 @@ class Manager extends Module {
     
     if (is_array($options))
       $this->mergeUserOptions($options);
+    
+    if (method_exists($this,"onConstruct")) {
+      $this->{"onConstruct"}();
+    }
   }
   public function getEntity() {
     static $cache = [];
