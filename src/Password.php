@@ -10,7 +10,7 @@ class Password {
   public function __construct($password,$options=null) {
     $this->password = $password;
     
-    $this->_setDefaultUserOptions(Manager::$default_options);
+    $this->_setDefaultUserOptions(Manager::defaultUserOptions());
     
     if (is_array($options))
       $this->mergeUserOptions($options);

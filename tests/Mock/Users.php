@@ -24,8 +24,8 @@ class Users implements UserModelInterface {
       'user_id'  => null
   ];
   
-  public function __construct() {
-    $this->resetRecord();
+  public function __construct($record=null) {
+    $this->resetRecord($record);
   }
 
   
@@ -37,6 +37,9 @@ class Users implements UserModelInterface {
   }
   public function addEmail($email) {
     $this->record->email[] = $email;
+  }
+  public function getUserId() {
+    return $this->getUsername();
   }
   public function getUsername() {
     return $this->record->username;
@@ -65,16 +68,16 @@ class Users implements UserModelInterface {
       }
     }
     return $record
-      ? $this->loadRecord($record)
+      ? $this->newInstance($record)
       : false;
   }
   
-  public function lookupUserByUsername($username) {
+  public function getUserByUsername($username) {
     return isset(self::$db[$username])
-      ? self::$db[$username]
+      ? $this->newInstance(self::$db[$username])
       : false;
   }
-  public function lookupUserByEmail($lookupemail) {
+  public function getUserByEmail($lookupemail) {
     $record = false;
     if (!empty($lookupemail)) {
       $lookupemail  = strtolower($lookupemail);
@@ -88,7 +91,12 @@ class Users implements UserModelInterface {
         }
       }
     }
-    return $record;
+    return $record
+      ? $this->newInstance($record)
+      : false;
+  }
+  public function getUserById($userid) {
+    return $this->getUserByUsername($userid);
   }
   
   public function save(){
@@ -103,9 +111,15 @@ class Users implements UserModelInterface {
       unset(self::$db[$this->record->username]);
   }
   
-  
-  public function resetRecord() {
-    $this->record = (object) $this->newrec;
+
+  public function newInstance($record=null) {
+    return new Users($record);
+  }
+  public function resetRecord($record=null) {
+    if (is_null($record)) {
+      $record = $this->newrec;
+    }
+    $this->loadRecord($record);
   }
   public function loadRecord($data) {
     $this->record = (object) $data;

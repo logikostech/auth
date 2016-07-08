@@ -53,28 +53,7 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $this->setExpectedException('Logikos\Auth\Exception');
     $this->auth->newUser('tempcke','P@ssW0rd');
   }
-  public function testLoginWithoutTokenFails() {
-    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
-    $this->setExpectedException('Logikos\Auth\BadTokenException');
-    $this->auth->login('tempcke','P@ssW0rd');
-  }
   
-  public function testLoginWithWrongPasswordFails() {
-    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
-    $this->setExpectedException('Logikos\Auth\Password\Exception');
-    $this->auth->login('tempcke','incorrectpassword');
-  }
-
-  public function testCanLogin() {
-    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
-    $token = $this->auth->getTokenElement();
-    $expected = '<input type="hidden"';
-    $this->assertStringStartsWith($expected, $token);
-    
-    $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
-    $this->auth->login('tempcke','P@ssW0rd');
-  }
-
   public function testNewUserPassToShort() {
     $this->setExpectedException('Logikos\Auth\Password\ToShortException');
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_LEN,10); // default is 8...
@@ -112,4 +91,50 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $this->auth->newUser('johndoe','P@ssW0rd','tempcke@foobar.com');
   }
   
+
+  public function testLoginWithoutTokenFails() {
+    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
+    $this->setExpectedException('Logikos\Auth\BadTokenException');
+    $this->auth->login('tempcke','P@ssW0rd');
+  }
+  public function testLoginWithWrongPasswordFails() {
+    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
+    $this->setExpectedException('Logikos\Auth\Password\Exception');
+    $this->auth->login('tempcke','incorrectpassword');
+  }
+  public function testCanLogin() {
+    $this->login();
+  }
+  public function testLoginExpiration() {
+    $this->login();
+    $this->auth->setUserOption(AuthManager::ATTR_SESSION_TIMEOUT,-1);
+    $this->assertLoginStatusIs(AuthManager::SESSION_EXPIRED,'Session should be expired');
+    $this->assertFalse($this->auth->isLoggedIn(),'User should not be logged in due to expired login');
+  }
+  public function testSessionInvalidForDifferentAddress() {
+    $this->login();
+    $_SERVER['REMOTE_ADDR'] = 'somethinglese';
+    $this->assertLoginStatusIs(AuthManager::SESSION_HIJACKED,'Session was hijacked');
+    $this->assertFalse($this->auth->isLoggedIn(),'User should not be logged in due to REMOTE_ADDR mismatch');
+  }
+  public function testSessionInvalidForDifferentAgent() {
+    $this->login();
+    $_SERVER['HTTP_USER_AGENT'] = 'somethinglese';
+    $this->assertLoginStatusIs(AuthManager::SESSION_HIJACKED,'Session was hijacked');
+    $this->assertFalse($this->auth->isLoggedIn(),'User should not be logged in due to HTTP_USER_AGENT mismatch');
+  }
+  
+  public function assertLoginStatusIs($status, $message=null) {
+    $this->assertSame(
+        $status,
+        $this->auth->getLoginStatus(),
+        $message
+    );
+  }
+  protected function login() {
+    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
+    $token = $this->auth->getTokenElement();
+    $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
+    $this->auth->login('tempcke','P@ssW0rd');
+  }
 }

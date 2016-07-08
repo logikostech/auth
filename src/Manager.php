@@ -31,6 +31,7 @@ class Manager extends Module {
   
   const USER_MODEL_INTERFACE = 'Logikos\Auth\UserModelInterface';
   
+  # attributes
   const ATTR_ENTITY          = 10;
   const ATTR_EMAIL_REQUIRED  = 20;
   const ATTR_PASS_SYMBOLS    = 100;
@@ -39,24 +40,20 @@ class Manager extends Module {
   const ATTR_PASS_MIN_UPPER  = 112;
   const ATTR_PASS_MIN_NUMBER = 113;
   const ATTR_PASS_MIN_SYMBOL = 114;
+  const ATTR_SESSION_TIMEOUT = 200;
   
-  // this should be readonly but class constants cant be arrays in php < 5.6
-  public static $default_options = [
-      self::ATTR_ENTITY          => null,
-      self::ATTR_EMAIL_REQUIRED  => true,
-      self::ATTR_PASS_MIN_LEN    => 8,
-      self::ATTR_PASS_MIN_LOWER  => 1,
-      self::ATTR_PASS_MIN_UPPER  => 1,
-      self::ATTR_PASS_MIN_NUMBER => 1,
-      self::ATTR_PASS_MIN_SYMBOL => 1,
-      self::ATTR_PASS_SYMBOLS    => '!@#$%^&*()_+-=~`{[}]|\;:\'",<.>/?'
-  ];
+  # session/login status
+  const SESSION_VALID        = 1;
+  const SESSION_NOT_SET      = 0;
+  const SESSION_EXPIRED      = -1;
+  const SESSION_HIJACKED     = -2;
+  
   
   public final function __construct($options=null) {
     if (is_a($options,self::USER_MODEL_INTERFACE))
       $options = [self::ATTR_ENTITY=>$options];
     
-    $this->_setDefaultUserOptions(self::$default_options);
+    $this->_setDefaultUserOptions(self::defaultUserOptions());
     
     if (is_array($options))
       $this->mergeUserOptions($options);
@@ -64,6 +61,20 @@ class Manager extends Module {
     if (method_exists($this,"onConstruct")) {
       $this->{"onConstruct"}();
     }
+  }
+  
+  public static function defaultUserOptions() {
+    return [
+        self::ATTR_ENTITY          => null,
+        self::ATTR_EMAIL_REQUIRED  => true,
+        self::ATTR_PASS_MIN_LEN    => 8,
+        self::ATTR_PASS_MIN_LOWER  => 1,
+        self::ATTR_PASS_MIN_UPPER  => 1,
+        self::ATTR_PASS_MIN_NUMBER => 1,
+        self::ATTR_PASS_MIN_SYMBOL => 1,
+        self::ATTR_PASS_SYMBOLS    => '!@#$%^&*()_+-=~`{[}]|\\;:\'",<.>/?',
+        self::ATTR_SESSION_TIMEOUT => 60 // seconds inactive to trigger timeout
+    ];
   }
   public function getEntity() {
     static $cache = [];
@@ -91,7 +102,7 @@ class Manager extends Module {
   }
   /**
    * @param string $login
-   * @return \Logikos\Auth\UserModleInterface
+   * @return \Logikos\Auth\UserModelInterface
    */
   public function getUserByLogin($login) {
     return $this->newEntity()->getUserByLogin($login);
@@ -121,6 +132,70 @@ class Manager extends Module {
     
     if (!$tokenCheckPassed)
       throw new BadTokenException();
+    $this->setSessionAuth([
+        'id'     => $user->getUserId(),
+        'name'   => $user->getUsername(),
+        'time'   => time(), // time of signin
+        'atime'  => time(), // time of last activity
+        'addr'   => $this->serverAttr('REMOTE_ADDR'),
+        'agent'  => $this->serverAttr('HTTP_USER_AGENT'),
+        'active' => 1
+    ]);
+  }
+  public function serverAttr($attr) {
+    static $default = [
+        'REMOTE_ADDR'     => 'localhost',
+        'HTTP_USER_AGENT' => 'shell'
+    ];
+    return isset($_SERVER[$attr]) ? $_SERVER[$attr] : $default[$attr];
+  }
+  public function isLoggedIn() {
+    $status = $this->getLoginStatus();
+    return $status > 0;
+  }
+  public function updateLastActiveTime() {
+    $auth = $this->requireSessionAuth();
+    $auth['atime'] = time();
+    $this->setSessionAuth($auth);
+  }
+  public function getLoginStatus() {
+    $auth = $this->getSessionAuth();
+    if (is_null($auth) || !is_array($auth))
+      return self::SESSION_NOT_SET;
+    
+    if ($this->isExpired())
+      return self::SESSION_EXPIRED;
+    
+    if ($this->isHijackAtempt())
+      return self::SESSION_HIJACKED;
+    
+    $this->updateLastActiveTime();
+    return self::SESSION_VALID;
+  }
+
+  protected function setSessionAuth($auth) {
+    $this->getSession()->set('auth',$auth);
+  }
+  public function getSessionAuth() {
+    return $this->getSession()->get('auth', null);
+  }
+  protected function requireSessionAuth() {
+    $auth = $this->getSessionAuth();
+    if (!is_array($auth)) {
+      throw new Exception('Invalid Session');
+    }
+    return $auth;
+  }
+  public function isExpired() {
+    $auth = $this->requireSessionAuth();
+    $expiretime = $auth['time'] + $this->getUserOption(self::ATTR_SESSION_TIMEOUT);
+    return $expiretime < time();
+  }
+  public function isHijackAtempt() {
+    $auth = $this->requireSessionAuth();
+    $addrMatch  = $this->serverAttr('REMOTE_ADDR')     === $auth['addr'];
+    $agentMatch = $this->serverAttr('HTTP_USER_AGENT') === $auth['agent'];
+    return !$addrMatch || !$agentMatch;
   }
   
   public function getTokenElement() {
@@ -131,7 +206,7 @@ class Manager extends Module {
   }
   /**
    * @throws Exception
-   * @return \Phalcon\Session
+   * @return \Phalcon\Session\Adapter
    */
   public function getSession() {
     static $session;
@@ -168,10 +243,10 @@ class Manager extends Module {
   }
   public function userExistsCheck($username, $email=null) {
     $entity = $this->newEntity();
-    if ($entity->lookupUserByUsername($username))
+    if ($entity->getUserByUsername($username))
       throw new UsernameTakenException();
     
-    if (!is_null($email) && $entity->lookupUserByEmail($email))
+    if (!is_null($email) && $entity->getUserByEmail($email))
       throw new EmailInUseException();
   }
 }
