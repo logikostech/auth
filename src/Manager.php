@@ -77,6 +77,10 @@ class Manager extends Module {
         self::ATTR_SESSION_TIMEOUT => 60 // seconds inactive to trigger timeout
     ];
   }
+  /**
+   * @throws InvalidEntityException
+   * @return \Logikos\Auth\UserModelInterface
+   */
   public function getEntity() {
     static $cache = [];
     $entity = $this->getUserOption(self::ATTR_ENTITY);
