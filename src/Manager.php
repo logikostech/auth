@@ -4,11 +4,12 @@ namespace Logikos\Auth;
 
 use Phalcon\Config;
 use Phalcon\DiInterface;
-use Phalcon\Security;
-use Phalcon\Mvc\User\Component;
 use Phalcon\Events\EventsAwareInterface;
-use Phalcon\Session\AdapterInterface AS SessionAdapter;
+use Phalcon\Forms\Element\Hidden;
+use Phalcon\Mvc\User\Component;
 use Phalcon\Mvc\User\Module;
+use Phalcon\Session\AdapterInterface AS SessionAdapter;
+use Phalcon\Security;
 
 class Manager extends Module {
   use \Logikos\UserOptionTrait;
@@ -197,12 +198,22 @@ class Manager extends Module {
     $agentMatch = $this->serverAttr('HTTP_USER_AGENT') === $auth['agent'];
     return !$addrMatch || !$agentMatch;
   }
-  
+
   public function getTokenElement() {
     $this->tokenkey = $this->getSecurity()->getTokenKey();
     $this->tokenval = $this->getSecurity()->getToken();
-    $mask = '<input type="hidden" name="%s" value="%s" />';
-    return sprintf($mask, $this->tokenkey, $this->tokenval);
+    
+    $element = new Hidden($this->tokenkey);
+    $element->setAttribute('value', $this->tokenval);
+    $element->setAttribute('name', $this->tokenkey);
+    
+    return $element;
+    
+//     $mask = '<input type="hidden" name="%s" value="%s" />';
+//     return sprintf($mask, $this->tokenkey, $this->tokenval);
+  }
+  public function renderTokenElement() {
+    return $this->getTokenElement()->render();
   }
   /**
    * @throws Exception
