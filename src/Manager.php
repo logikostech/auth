@@ -105,6 +105,12 @@ class Manager extends Module {
     $entity = $this->getEntity();
     return new $entity;
   }
+  public function getUserEntity() {
+    $sessionAuth = $this->getSessionAuth();
+    if (!empty($sessionAuth['id'])) {
+      return $this->newEntity()->getUserById($sessionAuth['id']);
+    }
+  }
   /**
    * @param string $login
    * @return \Logikos\Auth\UserModelInterface
