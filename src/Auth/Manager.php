@@ -32,16 +32,16 @@ class Manager extends Module {
   
   const USER_MODEL_INTERFACE = 'Logikos\Auth\UserModelInterface';
   
-  # attributes
-  const ATTR_ENTITY          = 10;
-  const ATTR_EMAIL_REQUIRED  = 20;
-  const ATTR_PASS_SYMBOLS    = 100;
-  const ATTR_PASS_MIN_LEN    = 110;
-  const ATTR_PASS_MIN_LOWER  = 111;
-  const ATTR_PASS_MIN_UPPER  = 112;
-  const ATTR_PASS_MIN_NUMBER = 113;
-  const ATTR_PASS_MIN_SYMBOL = 114;
-  const ATTR_SESSION_TIMEOUT = 200;
+  # attributes - aparently to be used in Phalcon\Validation\Validator::setOption() these have to be strings ...
+  const ATTR_ENTITY          = 'A10';
+  const ATTR_EMAIL_REQUIRED  = 'A20';
+  const ATTR_PASS_SYMBOLS    = 'A100';
+  const ATTR_PASS_MIN_LEN    = 'A110';
+  const ATTR_PASS_MIN_LOWER  = 'A111';
+  const ATTR_PASS_MIN_UPPER  = 'A112';
+  const ATTR_PASS_MIN_NUMBER = 'A113';
+  const ATTR_PASS_MIN_SYMBOL = 'A114';
+  const ATTR_SESSION_TIMEOUT = 'A200';
   
   # session/login status
   const SESSION_VALID        = 1;
