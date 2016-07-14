@@ -25,7 +25,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Logikos\\Auth\\": "src/",
+            "Logikos\\": "src/",
             "Logikos\\Tests\\": "tests/"
         }
     }
