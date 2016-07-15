@@ -2,6 +2,7 @@
 
 namespace Logikos\Auth;
 
+use Logikos\Validation\Validator\PasswordStrength;
 use Phalcon\Config;
 use Phalcon\DiInterface;
 use Phalcon\Events\EventsAwareInterface;
@@ -10,6 +11,7 @@ use Phalcon\Mvc\User\Component;
 use Phalcon\Mvc\User\Module;
 use Phalcon\Session\AdapterInterface AS SessionAdapter;
 use Phalcon\Security;
+use Phalcon\Validation;
 
 class Manager extends Module {
   use \Logikos\UserOptionTrait;
@@ -252,8 +254,15 @@ class Manager extends Module {
     return $security;
   }
   public function securePasswordCheck($password) {
-    $pass = new Password($password,$this->getUserOptions());
-    $pass->isSecure();
+    if (!$this->isPasswordSecure($password)) {
+      throw new Password\StrengthException();
+    }
+  }
+  public function isPasswordSecure($password) {
+    $ps = new PasswordStrength($this->getUserOptions());
+    $v  = new Validation([['password', $ps]]);
+    $this->messages = $v->validate(['password'=>$password]);
+    return count($this->messages) === 0;
   }
   public function emailCheck($email) {
     if ($this->getUserOption(self::ATTR_EMAIL_REQUIRED) && empty($email))

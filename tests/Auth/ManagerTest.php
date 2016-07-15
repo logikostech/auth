@@ -55,27 +55,27 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   }
   
   public function testNewUserPassToShort() {
-    $this->setExpectedException('Logikos\Auth\Password\ToShortException');
+    $this->setExpectedException('Logikos\Auth\Password\Exception');
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_LEN,10); // default is 8...
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
   public function testNewUserPassWithToFewLowerCaseChars() {
-    $this->setExpectedException('Logikos\Auth\Password\ToFewLowerException');
+    $this->setExpectedException('Logikos\Auth\Password\Exception');
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_LOWER,5); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
   public function testNewUserPassWithToFewUpperCaseChars() {
-    $this->setExpectedException('Logikos\Auth\Password\ToFewUpperException');
+    $this->setExpectedException('Logikos\Auth\Password\Exception');
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_UPPER,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
   public function testNewUserPassWithToFewNumbers() {
-    $this->setExpectedException('Logikos\Auth\Password\ToFewNumbersException');
+    $this->setExpectedException('Logikos\Auth\Password\Exception');
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_NUMBER,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
   public function testNewUserPassWithToFewSymbols() {
-    $this->setExpectedException('Logikos\Auth\Password\ToFewSymbolsException');
+    $this->setExpectedException('Logikos\Auth\Password\Exception');
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_SYMBOL,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
