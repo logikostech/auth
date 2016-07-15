@@ -1,7 +1,8 @@
 <?php
-
 namespace Logikos\Auth\Password;
 
-class Exception extends \Logikos\Auth\Exception {
+use Logikos\Auth\Exception as AuthException;
+
+class Exception extends AuthException {
   
 }
