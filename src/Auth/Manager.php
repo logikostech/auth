@@ -136,12 +136,16 @@ class Manager extends Module {
    * @param string $password
    */
   public function login($login, $password) {
-    $user = $this->getUserByLogin($login);
+    $tokenCheckPassed = $this->getSecurity()->checkToken();
+    $user             = $this->getUserByLogin($login);
+    
     if (!is_a($user,self::USER_MODEL_INTERFACE)) {
+      // To protect against timing attacks. The script will take roughly the same amount of time.
+      $this->getSecurity()->checkHash(rand());
       throw new Exception('No such user');
     }
+    
     $passwordCheckPassed = $this->getSecurity()->checkHash($password,$user->getPassword());
-    $tokenCheckPassed    = $this->getSecurity()->checkToken();
     
     if (!$passwordCheckPassed) {
       throw new Password\Exception();
