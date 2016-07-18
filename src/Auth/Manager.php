@@ -137,14 +137,19 @@ class Manager extends Module {
    */
   public function login($login, $password) {
     $user = $this->getUserByLogin($login);
+    if (!is_a($user,self::USER_MODEL_INTERFACE)) {
+      throw new Exception('No such user');
+    }
     $passwordCheckPassed = $this->getSecurity()->checkHash($password,$user->getPassword());
     $tokenCheckPassed    = $this->getSecurity()->checkToken();
     
-    if (!$passwordCheckPassed)
+    if (!$passwordCheckPassed) {
       throw new Password\Exception();
-    
-    if (!$tokenCheckPassed)
+    }
+    if (!$tokenCheckPassed) {
       throw new BadTokenException();
+    }
+    
     $this->setSessionAuth([
         'id'     => $user->getUserId(),
         'name'   => $user->getUsername(),
