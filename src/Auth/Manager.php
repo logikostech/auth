@@ -43,7 +43,8 @@ class Manager extends Module {
   const ATTR_PASS_MIN_UPPER  = 'A112';
   const ATTR_PASS_MIN_NUMBER = 'A113';
   const ATTR_PASS_MIN_SYMBOL = 'A114';
-  const ATTR_SESSION_TIMEOUT = 'A200';
+  const ATTR_SESSION_TIMEOUT = 'A200'; // seconds inactive to trigger timeout
+  const ATTR_WORKFACTOR      = 'A101'; // int 4-32, higher numbers increase the time it takes to create and check password hashes, longer check times makes password cracking shower/harder
   
   # session/login status
   const SESSION_VALID        = 1;
@@ -76,7 +77,8 @@ class Manager extends Module {
         self::ATTR_PASS_MIN_NUMBER => 1,
         self::ATTR_PASS_MIN_SYMBOL => 1,
         self::ATTR_PASS_SYMBOLS    => '!@#$%^&*()_+-=~`{[}]|\\;:\'",<.>/?',
-        self::ATTR_SESSION_TIMEOUT => 60 // seconds inactive to trigger timeout
+        self::ATTR_SESSION_TIMEOUT => 60, // seconds inactive to trigger timeout
+        self::ATTR_WORKFACTOR      => 8
     ];
   }
   /**
@@ -126,9 +128,16 @@ class Manager extends Module {
     $this->emailCheck($email);
     $user = $this->newEntity();
     $user->setUsername($username);
-    $user->setPassword($this->getSecurity()->hash($password));
+    $this->setPassword($user, $password);
     $user->addEmail($email);
     $user->save();
+  }
+  
+  public function setPassword(UserModelInterface $user, $password) {
+    $user->setPassword($this->getSecurity()->hash(
+        $password,
+        $this->getUserOption(self::ATTR_WORKFACTOR)
+    ));
   }
   /**
    * 
