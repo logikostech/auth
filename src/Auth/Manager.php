@@ -134,10 +134,14 @@ class Manager extends Module {
   }
   
   public function setPassword(UserModelInterface $user, $password) {
-    $user->setPassword($this->getSecurity()->hash(
+    $user->setPassword($this->getPasswordHash($password));
+  }
+  
+  protected function getPasswordHash($password) {
+    return $this->getSecurity()->hash(
         $password,
         $this->getUserOption(self::ATTR_WORKFACTOR)
-    ));
+    );
   }
   /**
    * 
@@ -150,7 +154,7 @@ class Manager extends Module {
     
     if (!is_a($user,self::USER_MODEL_INTERFACE)) {
       // To protect against timing attacks. The script will take roughly the same amount of time.
-      $this->getSecurity()->checkHash(rand());
+      $this->getPasswordHash(rand());
       throw new Exception('No such user');
     }
     

@@ -145,6 +145,12 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $this->assertGreaterThan($time1 * 2, $time2, 'A work factor of 6 should be more than 2x as slow as a workfactor of 4');
   }
   
+  
+  public function testLoginWithNonExistingUser() {
+    $this->setExpectedException('Logikos\Auth\Exception');
+    $this->auth->login('foobar','fakepassword');
+  }
+  
   public function assertLoginStatusIs($status, $message=null) {
     $this->assertSame(
         $status,
