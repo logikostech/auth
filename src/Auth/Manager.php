@@ -77,7 +77,7 @@ class Manager extends Module {
         self::ATTR_PASS_MIN_NUMBER => 1,
         self::ATTR_PASS_MIN_SYMBOL => 1,
         self::ATTR_PASS_SYMBOLS    => '!@#$%^&*()_+-=~`{[}]|\\;:\'",<.>/?',
-        self::ATTR_SESSION_TIMEOUT => 60, // seconds inactive to trigger timeout
+        self::ATTR_SESSION_TIMEOUT => (24*60*60), // seconds inactive to trigger timeout
         self::ATTR_WORKFACTOR      => 8
     ];
   }
@@ -109,6 +109,9 @@ class Manager extends Module {
     $entity = $this->getEntity();
     return new $entity;
   }
+  /**
+   * @return UserModelInterface
+   */
   public function getUserEntity() {
     $sessionAuth = $this->getSessionAuth();
     if (!empty($sessionAuth['id'])) {
@@ -214,6 +217,10 @@ class Manager extends Module {
   public function getSessionAuth() {
     return $this->getSession()->get('auth', null);
   }
+  public function getUserId() {
+    $sessionAuth = $this->getSessionAuth();
+    return isset($sessionAuth['id']) ? $sessionAuth['id'] : null;
+  }
   protected function requireSessionAuth() {
     $auth = $this->getSessionAuth();
     if (!is_array($auth)) {
@@ -221,10 +228,14 @@ class Manager extends Module {
     }
     return $auth;
   }
+  
   public function isExpired() {
     $auth = $this->requireSessionAuth();
-    $expiretime = $auth['time'] + $this->getUserOption(self::ATTR_SESSION_TIMEOUT);
+    $expiretime = $auth['time'] + $this->getSessionTimeout();
     return $expiretime < time();
+  }
+  public function getSessionTimeout() {
+    return $this->getUserOption(self::ATTR_SESSION_TIMEOUT);
   }
   public function isHijackAtempt() {
     $auth = $this->requireSessionAuth();
