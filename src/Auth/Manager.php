@@ -230,9 +230,14 @@ class Manager extends Module {
   }
   
   public function isExpired() {
-    $auth = $this->requireSessionAuth();
-    $expiretime = $auth['time'] + $this->getSessionTimeout();
-    return $expiretime < time();
+    try {
+      $auth = $this->requireSessionAuth();
+      $expiretime = $auth['time'] + $this->getSessionTimeout();
+      return $expiretime < time();
+    }
+    catch (Exception $e) {
+      return false;
+    }
   }
   public function getSessionTimeout() {
     return $this->getUserOption(self::ATTR_SESSION_TIMEOUT);
