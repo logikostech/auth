@@ -2,6 +2,7 @@
 
 namespace Logikos\Auth;
 
+use Logikos\Auth\UserModelInterface;
 use Logikos\Validation\Validator\PasswordStrength;
 use Phalcon\Config;
 use Phalcon\DiInterface;
@@ -31,9 +32,7 @@ class Manager extends Module {
    * @var \Phalcon\Security
    */
   protected $security;
-  
-  const USER_MODEL_INTERFACE = 'Logikos\Auth\UserModelInterface';
-  
+    
   # attributes - aparently to be used in Phalcon\Validation\Validator::setOption() these have to be strings ...
   const ATTR_ENTITY          = 'A10';
   const ATTR_EMAIL_REQUIRED  = 'A20';
@@ -54,9 +53,9 @@ class Manager extends Module {
   
   
   public final function __construct($options=null) {
-    if (is_a($options,self::USER_MODEL_INTERFACE))
+    if ($options instanceof UserModelInterface) {
       $options = [self::ATTR_ENTITY=>$options];
-    
+    }
     $this->_setDefaultUserOptions(self::defaultUserOptions());
     
     if (is_array($options))
@@ -92,13 +91,13 @@ class Manager extends Module {
       $cache[$entity] = false;
       if (!is_null($entity) && class_exists($entity)) {
         $rc = new \ReflectionClass($entity);
-        if ($rc->implementsInterface(self::USER_MODEL_INTERFACE)) {
+        if ($rc->implementsInterface(UserModelInterface::class)) {
           $cache[$entity] = true;
         }
       }
     }
     if ($cache[$entity] === false) {
-      throw new InvalidEntityException('Constructor requires '.self::USER_MODEL_INTERFACE);
+      throw new InvalidEntityException('Constructor requires '.UserModelInterface::class);
     }
     return $entity;
   }
@@ -152,21 +151,18 @@ class Manager extends Module {
    * @param string $password
    */
   public function login($login, $password) {
-    $tokenCheckPassed = $this->getSecurity()->checkToken();
     $user             = $this->getUserByLogin($login);
     
-    if (!is_a($user,self::USER_MODEL_INTERFACE)) {
+    if (!$user instanceof UserModelInterface) {
       // To protect against timing attacks. The script will take roughly the same amount of time.
       $this->getPasswordHash(rand());
       throw new Exception('No such user');
     }
     
-    $passwordCheckPassed = $this->getSecurity()->checkHash($password,$user->getPassword());
-    
-    if (!$passwordCheckPassed) {
+    if (!$this->isCorrectPassword($user, $password)) {
       throw new Password\Exception();
     }
-    if (!$tokenCheckPassed) {
+    if (!$this->isValidToken()) {
       throw new BadTokenException();
     }
     
@@ -179,6 +175,12 @@ class Manager extends Module {
         'agent'  => $this->serverAttr('HTTP_USER_AGENT'),
         'active' => 1
     ]);
+  }
+  public function isCorrectPassword(UserModelInterface $user, $password) {
+    return $this->getSecurity()->checkHash($password,$user->getPassword());
+  }
+  public function isValidToken() {
+    return $this->getSecurity()->checkToken();
   }
   public function serverAttr($attr) {
     static $default = [

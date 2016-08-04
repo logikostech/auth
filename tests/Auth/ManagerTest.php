@@ -21,6 +21,7 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   public static function setUpBeforeClass() {
     static::$basedir = realpath(substr(__DIR__.'/',0,strrpos(__DIR__.'/','/tests/')+7));
     require_once static::$basedir.'/_bootstrap.php';
+    
     @session_start();
   }
   
@@ -149,6 +150,24 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   public function testLoginWithNonExistingUser() {
     $this->setExpectedException('Logikos\Auth\Exception');
     $this->auth->login('foobar','fakepassword');
+  }
+  
+  public function testUserCanRetryLoginWithoutNewToken() {
+    // purpose of this test is for ajax submited login forms .. user will still have old token
+    // by default phalcon destorys the token in the session if the check passes
+    // we need to insure user can try a different password
+    
+    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
+    $token = $this->auth->getTokenElement();
+    $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
+    
+    try {
+      $this->auth->login('tempcke','WrongPassword');
+    }
+    catch(\Logikos\Auth\Password\Exception $e) {
+      $this->auth->login('tempcke','P@ssW0rd');
+    }
+    $this->assertTrue($this->auth->isLoggedIn(),'User should be logged in after entering the wrong password then the right password');
   }
   
   public function assertLoginStatusIs($status, $message=null) {
