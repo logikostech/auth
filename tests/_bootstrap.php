@@ -1,20 +1,22 @@
 <?php
-$basedir  = realpath(__DIR__.'/..');
-$composer = $basedir . "/vendor/autoload.php";
-if (file_exists($composer))
-  include_once $composer;
 
-$loader = new \Phalcon\Loader;
-$loader
-  ->registerNamespaces([
-    'Logikos/Auth' => $basedir.'/src'
-  ])
-  ->register();
 
-use Phalcon\Di\FactoryDefault as Di;
+define('TESTS_DIR', dirname(__FILE__));
 
-$di = new Di();
+$composer_autoloader = TESTS_DIR . "/../vendor/autoload.php";
 
-$di->set('auth',"Logikos\\Auth\\Manager",true);
+if (file_exists($composer_autoloader)) {
+  include_once $composer_autoloader;
+}
+else {
+  $projectBaseDir = realpath(substr(__DIR__.'/',0,strrpos(__DIR__.'/','/vendor/')));
+  $composer_autoloader = $projectBaseDir.'/vendor/autoload.php';
+  if (file_exists($composer_autoloader)) {
+    include_once $composer_autoloader;
+  }
+}
 
-Phalcon\DI::setDefault($di);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
