@@ -2,6 +2,7 @@
 
 namespace Logikos\Auth;
 
+use Logikos\Auth\Session as AuthSession;
 use Logikos\Auth\UserModelInterface;
 use Logikos\Validation\Validator\PasswordStrength;
 use Phalcon\Config;
@@ -24,7 +25,7 @@ class Manager extends Module {
   protected $authconf;
   
   /**
-   * @var SessionAdapter
+   * @var AuthSession
    */
   protected $session;
   
@@ -50,6 +51,7 @@ class Manager extends Module {
   const SESSION_NOT_SET      = 0;
   const SESSION_EXPIRED      = -1;
   const SESSION_HIJACKED     = -2;
+  const SESSION_INACTIVE     = -3;
   
   
   public final function __construct($options=null) {
@@ -112,9 +114,8 @@ class Manager extends Module {
    * @return UserModelInterface
    */
   public function getUserEntity() {
-    $sessionAuth = $this->getSessionAuth();
-    if (!empty($sessionAuth['id'])) {
-      return $this->newEntity()->getUserById($sessionAuth['id']);
+    if (!$this->getSession()->isEmpty()) {
+      return $this->newEntity()->getUserById($this->getSession()->getUserId());
     }
   }
   /**
@@ -166,15 +167,7 @@ class Manager extends Module {
       throw new BadTokenException();
     }
     
-    $this->setSessionAuth([
-        'id'     => $user->getUserId(),
-        'name'   => $user->getUsername(),
-        'time'   => time(), // time of signin
-        'atime'  => time(), // time of last activity
-        'addr'   => $this->serverAttr('REMOTE_ADDR'),
-        'agent'  => $this->serverAttr('HTTP_USER_AGENT'),
-        'active' => 1
-    ]);
+    $this->getSession()->create($user);
   }
   public function isCorrectPassword(UserModelInterface $user, $password) {
     return $this->getSecurity()->checkHash($password,$user->getPassword());
@@ -182,103 +175,78 @@ class Manager extends Module {
   public function isValidToken() {
     return $this->getSecurity()->checkToken();
   }
-  public function serverAttr($attr) {
-    static $default = [
-        'REMOTE_ADDR'     => 'localhost',
-        'HTTP_USER_AGENT' => 'shell'
-    ];
-    return isset($_SERVER[$attr]) ? $_SERVER[$attr] : $default[$attr];
+  public function getServerAttr($attr) {
+    static $cache;
+    static $server;
+    if (!$cache || $server !== $_SERVER) {
+      $cache = new Config([
+          'REMOTE_ADDR'     => 'localhost',
+          'HTTP_USER_AGENT' => 'shell'
+      ]);
+      if ($_SERVER) {
+        $cache->merge(new Config($_SERVER));
+      }
+    }
+    $server = $_SERVER;
+    return $cache[$attr];
   }
   public function isLoggedIn() {
     $status = $this->getLoginStatus();
     return $status > 0;
   }
-  public function updateLastActiveTime() {
-    $auth = $this->requireSessionAuth();
-    $auth['atime'] = time();
-    $this->setSessionAuth($auth);
-  }
   public function getLoginStatus() {
-    $auth = $this->getSessionAuth();
-    if (is_null($auth) || !is_array($auth))
+    if ($this->getSession()->isEmpty()) {
       return self::SESSION_NOT_SET;
-    
-    if ($this->isExpired())
+    }
+    if ($this->getSession()->isExpired()) {
       return self::SESSION_EXPIRED;
-    
-    if ($this->isHijackAtempt())
+    }
+    if (!$this->getSession()->isActive()) {
+      return self::SESSION_INACTIVE;
+    }
+    if ($this->getSession()->isHijackAtempt()) {
       return self::SESSION_HIJACKED;
-    
-    $this->updateLastActiveTime();
+    }
     return self::SESSION_VALID;
   }
 
-  protected function setSessionAuth($auth) {
-    $this->getSession()->set('auth',$auth);
-  }
-  public function getSessionAuth() {
-    return $this->getSession()->get('auth', null);
-  }
   public function getUserId() {
-    $sessionAuth = $this->getSessionAuth();
-    return isset($sessionAuth['id']) ? $sessionAuth['id'] : null;
-  }
-  protected function requireSessionAuth() {
-    $auth = $this->getSessionAuth();
-    if (!is_array($auth)) {
-      throw new Exception('Invalid Session');
-    }
-    return $auth;
+    return $this->getSession()->getUserId();
   }
   
-  public function isExpired() {
-    try {
-      $auth = $this->requireSessionAuth();
-      $expiretime = $auth['time'] + $this->getSessionTimeout();
-      return $expiretime < time();
-    }
-    catch (Exception $e) {
-      return false;
-    }
-  }
-  public function getSessionTimeout() {
-    return $this->getUserOption(self::ATTR_SESSION_TIMEOUT);
-  }
-  public function isHijackAtempt() {
-    $auth = $this->requireSessionAuth();
-    $addrMatch  = $this->serverAttr('REMOTE_ADDR')     === $auth['addr'];
-    $agentMatch = $this->serverAttr('HTTP_USER_AGENT') === $auth['agent'];
-    return !$addrMatch || !$agentMatch;
+  public function markSessionInactive() {
+    $this->getSession()->setInactive();
   }
 
-  public function getTokenElement() {
-    $this->tokenkey = $this->getSecurity()->getTokenKey();
-    $this->tokenval = $this->getSecurity()->getToken();
-    
-    $element = new Hidden($this->tokenkey);
-    $element->setAttribute('value', $this->tokenval);
-    $element->setAttribute('name', $this->tokenkey);
-    
-    return $element;
-    
-//     $mask = '<input type="hidden" name="%s" value="%s" />';
-//     return sprintf($mask, $this->tokenkey, $this->tokenval);
+  public function getTokenElement($forcenew = false) {
+    if ($forcenew || !$this->getSession()->has('$PHALCON/CSRF/KEY$')) {
+      $this->tokenkey = $this->getSecurity()->getTokenKey();
+      $this->tokenval = $this->getSecurity()->getToken();
+      
+      $this->tokenElement = new Hidden($this->tokenkey);
+      $this->tokenElement->setAttribute('value', $this->tokenval);
+      $this->tokenElement->setAttribute('name', $this->tokenkey);
+    }
+    return $this->tokenElement;
   }
+  
   public function renderTokenElement() {
     return $this->getTokenElement()->render();
   }
+  
   /**
    * @throws Exception
-   * @return \Phalcon\Session\Adapter
+   * @return AuthSession
    */
   public function getSession() {
-    static $session;
-    if (!$session) {
+    if (!$this->session) {      
       $session = $this->getDi()->get('session');
-      if (!$session || !is_a($session,'Phalcon\Session\AdapterInterface'))
+      if (!$session instanceof SessionAdapter) {
         throw new Exception('Please load a session manager in Phalcon\Di');
+      }
+      $this->session = new AuthSession($this, $session);
     }
-    return $session;
+    return $this->session;
   }
   /**
    * @throws Exception

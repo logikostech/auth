@@ -115,22 +115,23 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   public function testSessionInvalidForDifferentAddress() {
     $this->login();
     $_SERVER['REMOTE_ADDR'] = 'somethinglese';
-    $this->assertLoginStatusIs(AuthManager::SESSION_HIJACKED,'Session was hijacked');
+    $this->assertLoginStatusIs(AuthManager::SESSION_HIJACKED,'Failed to detect hijacked session');
     $this->assertFalse($this->auth->isLoggedIn(),'User should not be logged in due to REMOTE_ADDR mismatch');
   }
   public function testSessionInvalidForDifferentAgent() {
     $this->login();
     $_SERVER['HTTP_USER_AGENT'] = 'somethinglese';
-    $this->assertLoginStatusIs(AuthManager::SESSION_HIJACKED,'Session was hijacked');
+    $this->assertLoginStatusIs(AuthManager::SESSION_HIJACKED,'Failed to detect hijacked session');
     $this->assertFalse($this->auth->isLoggedIn(),'User should not be logged in due to HTTP_USER_AGENT mismatch');
   }
   
   // read how work factor affects things here: https://docs.phalconphp.com/en/latest/reference/security.html
   public function testCanAdjustEncriptionWorkfactor() {
+    
     $this->auth->setUserOption(AuthManager::ATTR_WORKFACTOR,4);
     $start = microtime(true);
     $this->auth->newUser('user1','P@ssW0rd','user1@foobar.com');
-    $token = $this->auth->getTokenElement();
+    $token = $this->auth->getTokenElement(true);
     $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
     $this->auth->login('user1','P@ssW0rd');
     $time1 = microtime(true) - $start;
@@ -138,9 +139,9 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $this->auth->setUserOption(AuthManager::ATTR_WORKFACTOR,6);
     $start = microtime(true);
     $this->auth->newUser('user2','P@ssW0rd','user2@foobar.com');
-    $token = $this->auth->getTokenElement();
+    $token = $this->auth->getTokenElement(true);
     $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
-    $this->auth->login('user1','P@ssW0rd');
+    $this->auth->login('user2','P@ssW0rd');
     $time2 = microtime(true) - $start;
     
     $this->assertGreaterThan($time1 * 2, $time2, 'A work factor of 6 should be more than 2x as slow as a workfactor of 4');
