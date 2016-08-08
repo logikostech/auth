@@ -33,6 +33,8 @@ class Manager extends Module {
    * @var \Phalcon\Security
    */
   protected $security;
+  
+  protected $tokenElement;
     
   # attributes - aparently to be used in Phalcon\Validation\Validator::setOption() these have to be strings ...
   const ATTR_ENTITY          = 'A10';
@@ -219,7 +221,7 @@ class Manager extends Module {
   }
 
   public function getTokenElement($forcenew = false) {
-    if ($forcenew || !$this->getSession()->has('$PHALCON/CSRF/KEY$')) {
+    if ($forcenew || is_null($this->tokenElement) || !$this->getSession()->has('$PHALCON/CSRF/KEY$')) {
       $this->tokenkey = $this->getSecurity()->getTokenKey();
       $this->tokenval = $this->getSecurity()->getToken();
       
