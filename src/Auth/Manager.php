@@ -171,6 +171,9 @@ class Manager extends Module {
     
     $this->getSession()->create($user);
   }
+  public function logout() {
+    $this->getSession()->destroy();
+  }
   public function isCorrectPassword(UserModelInterface $user, $password) {
     return $this->getSecurity()->checkHash($password,$user->getPassword());
   }

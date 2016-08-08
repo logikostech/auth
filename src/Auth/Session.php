@@ -63,6 +63,9 @@ class Session {
     $this->session->set(self::KEY,new Config($data));
     return $this;
   }
+  public function destroy() {
+    $this->session->remove(self::KEY);
+  }
   public function isEmpty() {
     return $this->getData()->count() === 0;
   }

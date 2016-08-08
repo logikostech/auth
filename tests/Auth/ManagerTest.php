@@ -170,7 +170,11 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     }
     $this->assertTrue($this->auth->isLoggedIn(),'User should be logged in after entering the wrong password then the right password');
   }
-  
+  public function testCanLogout() {
+    $this->login();
+    $this->auth->logout();
+    $this->assertSame(AuthManager::SESSION_NOT_SET, $this->auth->getLoginStatus(), 'Failed to remove session data');
+  }
   public function assertLoginStatusIs($status, $message=null) {
     $this->assertSame(
         $status,
