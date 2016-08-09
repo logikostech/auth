@@ -2,8 +2,11 @@
 
 namespace Logikos\Tests\Auth;
 
-use Logikos\Auth\Manager as AuthManager;
-use Logikos\Auth\Logikos\Auth;
+use Logikos\Auth\BadTokenException;
+use Logikos\Auth\Exception                as AuthException;
+use Logikos\Auth\InvalidEntityException;
+use Logikos\Auth\Manager                  as AuthManager;
+use Logikos\Auth\Password\Exception       as PasswordException;
 use Logikos\Tests\Mock\Users;
 use Phalcon\Di\FactoryDefault as Di;
 
@@ -37,7 +40,7 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   }
   
   public function testInvalidUserModelName() {
-    $this->setExpectedException('Logikos\Auth\InvalidEntityException');
+    $this->setExpectedException(InvalidEntityException::class);
     $this->auth->setUserOption(AuthManager::ATTR_ENTITY, null);
     $this->auth->getEntity();
   }
@@ -51,43 +54,43 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   
   public function testEmailRequiredToAddNewUser() {
     $this->auth->setUserOption(AuthManager::ATTR_EMAIL_REQUIRED,true); // this is default anyway...
-    $this->setExpectedException('Logikos\Auth\Exception');
+    $this->setExpectedException(AuthException::class);
     $this->auth->newUser('tempcke','P@ssW0rd');
   }
   
   public function testNewUserPassToShort() {
-    $this->setExpectedException('Logikos\Auth\Password\Exception');
+    $this->setExpectedException(PasswordException::class);
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_LEN,10); // default is 8...
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
   public function testNewUserPassWithToFewLowerCaseChars() {
-    $this->setExpectedException('Logikos\Auth\Password\Exception');
+    $this->setExpectedException(PasswordException::class);
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_LOWER,5); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
   public function testNewUserPassWithToFewUpperCaseChars() {
-    $this->setExpectedException('Logikos\Auth\Password\Exception');
+    $this->setExpectedException(PasswordException::class);
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_UPPER,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
   public function testNewUserPassWithToFewNumbers() {
-    $this->setExpectedException('Logikos\Auth\Password\Exception');
+    $this->setExpectedException(PasswordException::class);
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_NUMBER,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
   public function testNewUserPassWithToFewSymbols() {
-    $this->setExpectedException('Logikos\Auth\Password\Exception');
+    $this->setExpectedException(PasswordException::class);
     $this->auth->setUserOption(AuthManager::ATTR_PASS_MIN_SYMBOL,3); // default is 1
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
   }
 
   public function testCantCreateUsernameThatAlreadyExists() {
-    $this->setExpectedException('Logikos\Auth\Exception');
+    $this->setExpectedException(AuthException::class);
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@other.com');
   }
   public function testCantCreateUserWithSameEmailAsOtherUser() {
-    $this->setExpectedException('Logikos\Auth\Exception');
+    $this->setExpectedException(AuthException::class);
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
     $this->auth->newUser('johndoe','P@ssW0rd','tempcke@foobar.com');
   }
@@ -95,12 +98,12 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
 
   public function testLoginWithoutTokenFails() {
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
-    $this->setExpectedException('Logikos\Auth\BadTokenException');
+    $this->setExpectedException(BadTokenException::class);
     $this->auth->login('tempcke','P@ssW0rd');
   }
   public function testLoginWithWrongPasswordFails() {
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
-    $this->setExpectedException('Logikos\Auth\Password\Exception');
+    $this->setExpectedException(PasswordException::class);
     $this->auth->login('tempcke','incorrectpassword');
   }
   public function testCanLogin() {
@@ -149,7 +152,7 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   
   
   public function testLoginWithNonExistingUser() {
-    $this->setExpectedException('Logikos\Auth\Exception');
+    $this->setExpectedException(AuthException::class);
     $this->auth->login('foobar','fakepassword');
   }
   
@@ -184,6 +187,27 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should be inactive');
     $this->auth->reActivate('P@ssW0rd');
     $this->assertLoginStatusIs(AuthManager::SESSION_VALID,'Session should be valid now');
+  }
+  public function testCanReactivateSession() {
+    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
+    $token = $this->auth->getTokenElement();
+    $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
+    $this->auth->login('tempcke','P@ssW0rd');
+    $this->auth->markSessionInactive();
+    $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should be inactive');
+    $this->auth->reActivate('P@ssW0rd');
+    $this->assertLoginStatusIs(AuthManager::SESSION_VALID,'Session should be valid now');
+  }
+  public function testCantReactivateSessionWithWrongPassword() {
+    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
+    $token = $this->auth->getTokenElement();
+    $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
+    $this->auth->login('tempcke','P@ssW0rd');
+    $this->auth->markSessionInactive();
+    $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should be inactive');
+    $this->setExpectedException(PasswordException::class);
+    $this->auth->reActivate('wrongP@$$');
+    $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should still be inactive');
   }
   
   

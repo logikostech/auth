@@ -187,6 +187,9 @@ class Manager extends Module {
   public function reActivate($password) {
     $userid = $this->getSession()->getUserId();
     $user   = $this->getUserById($userid);
+    if (!$this->isCorrectPassword($user, $password)) {
+      throw new Password\Exception();
+    }
     $this->getSession()->setActive();
     return $this;
   }
