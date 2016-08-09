@@ -120,6 +120,9 @@ class Session {
   public function setInactive() {
     return $this->set(self::INDEX_ISACTIVE, false);
   }
+  public function setActive() {
+    return $this->set(self::INDEX_ISACTIVE, true);
+  }
   public function getSessionTimeout() {
     return $this->auth->getUserOption(AuthManager::ATTR_SESSION_TIMEOUT);
   }

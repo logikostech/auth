@@ -127,6 +127,9 @@ class Manager extends Module {
   public function getUserByLogin($login) {
     return $this->newEntity()->getUserByLogin($login);
   }
+  public function getUserById($userid) {
+    return $this->newEntity()->getUserById($userid);
+  }
   public function newUser($username, $password, $email=null) {
     $this->userExistsCheck($username, $email);
     $this->securePasswordCheck($password);
@@ -170,9 +173,22 @@ class Manager extends Module {
     }
     
     $this->getSession()->create($user);
+    return $this;
   }
   public function logout() {
     $this->getSession()->destroy();
+    return $this;
+  }
+
+  public function markSessionInactive() {
+    $this->getSession()->setInactive();
+    return $this;
+  }
+  public function reActivate($password) {
+    $userid = $this->getSession()->getUserId();
+    $user   = $this->getUserById($userid);
+    $this->getSession()->setActive();
+    return $this;
   }
   public function isCorrectPassword(UserModelInterface $user, $password) {
     return $this->getSecurity()->checkHash($password,$user->getPassword());
@@ -219,9 +235,6 @@ class Manager extends Module {
     return $this->getSession()->getUserId();
   }
   
-  public function markSessionInactive() {
-    $this->getSession()->setInactive();
-  }
 
   public function getTokenElement($forcenew = false) {
     if ($forcenew || is_null($this->tokenElement) || !$this->getSession()->has('$PHALCON/CSRF/KEY$')) {

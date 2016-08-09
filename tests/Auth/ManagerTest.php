@@ -175,6 +175,18 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $this->auth->logout();
     $this->assertSame(AuthManager::SESSION_NOT_SET, $this->auth->getLoginStatus(), 'Failed to remove session data');
   }
+  public function testCanMarkSessionInactive() {
+    $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
+    $token = $this->auth->getTokenElement();
+    $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
+    $this->auth->login('tempcke','P@ssW0rd');
+    $this->auth->markSessionInactive();
+    $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should be inactive');
+    $this->auth->reActivate('P@ssW0rd');
+    $this->assertLoginStatusIs(AuthManager::SESSION_VALID,'Session should be valid now');
+  }
+  
+  
   public function assertLoginStatusIs($status, $message=null) {
     $this->assertSame(
         $status,
