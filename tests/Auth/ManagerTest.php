@@ -7,6 +7,7 @@ use Logikos\Auth\Exception                as AuthException;
 use Logikos\Auth\InvalidEntityException;
 use Logikos\Auth\Manager                  as AuthManager;
 use Logikos\Auth\Password\Exception       as PasswordException;
+use Logikos\Auth\Session                  as AuthSession;
 use Logikos\Tests\Mock\Users;
 use Phalcon\Di\FactoryDefault as Di;
 
@@ -112,19 +113,19 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   public function testLoginExpiration() {
     $this->login();
     $this->auth->setUserOption(AuthManager::ATTR_SESSION_TIMEOUT,-1);
-    $this->assertLoginStatusIs(AuthManager::SESSION_EXPIRED,'Session should be expired');
+    $this->assertLoginStatusIs(AuthSession::STATUS_EXPIRED,'Session should be expired');
     $this->assertFalse($this->auth->isLoggedIn(),'User should not be logged in due to expired login');
   }
   public function testSessionInvalidForDifferentAddress() {
     $this->login();
     $_SERVER['REMOTE_ADDR'] = 'somethinglese';
-    $this->assertLoginStatusIs(AuthManager::SESSION_HIJACKED,'Failed to detect hijacked session');
+    $this->assertLoginStatusIs(AuthSession::STATUS_HIJACKED,'Failed to detect hijacked session');
     $this->assertFalse($this->auth->isLoggedIn(),'User should not be logged in due to REMOTE_ADDR mismatch');
   }
   public function testSessionInvalidForDifferentAgent() {
     $this->login();
     $_SERVER['HTTP_USER_AGENT'] = 'somethinglese';
-    $this->assertLoginStatusIs(AuthManager::SESSION_HIJACKED,'Failed to detect hijacked session');
+    $this->assertLoginStatusIs(AuthSession::STATUS_HIJACKED,'Failed to detect hijacked session');
     $this->assertFalse($this->auth->isLoggedIn(),'User should not be logged in due to HTTP_USER_AGENT mismatch');
   }
   
@@ -176,7 +177,7 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
   public function testCanLogout() {
     $this->login();
     $this->auth->logout();
-    $this->assertSame(AuthManager::SESSION_NOT_SET, $this->auth->getLoginStatus(), 'Failed to remove session data');
+    $this->assertSame(AuthSession::STATUS_NOT_SET, $this->auth->getLoginStatus(), 'Failed to remove session data');
   }
   public function testCanMarkSessionInactive() {
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
@@ -184,9 +185,9 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
     $this->auth->login('tempcke','P@ssW0rd');
     $this->auth->markSessionInactive();
-    $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should be inactive');
+    $this->assertLoginStatusIs(AuthSession::STATUS_INACTIVE,'Session should be inactive');
     $this->auth->reActivate('P@ssW0rd');
-    $this->assertLoginStatusIs(AuthManager::SESSION_VALID,'Session should be valid now');
+    $this->assertLoginStatusIs(AuthSession::STATUS_VALID,'Session should be valid now');
   }
   public function testCanReactivateSession() {
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
@@ -194,9 +195,9 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
     $this->auth->login('tempcke','P@ssW0rd');
     $this->auth->markSessionInactive();
-    $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should be inactive');
+    $this->assertLoginStatusIs(AuthSession::STATUS_INACTIVE,'Session should be inactive');
     $this->auth->reActivate('P@ssW0rd');
-    $this->assertLoginStatusIs(AuthManager::SESSION_VALID,'Session should be valid now');
+    $this->assertLoginStatusIs(AuthSession::STATUS_VALID,'Session should be valid now');
   }
   public function testCantReactivateSessionWithWrongPassword() {
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');
@@ -204,19 +205,15 @@ class ManagerTest extends \PHPUnit_Framework_TestCase {
     $_POST[$this->auth->tokenkey] = $this->auth->tokenval;
     $this->auth->login('tempcke','P@ssW0rd');
     $this->auth->markSessionInactive();
-    $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should be inactive');
+    $this->assertLoginStatusIs(AuthSession::STATUS_INACTIVE,'Session should be inactive');
     $this->setExpectedException(PasswordException::class);
     $this->auth->reActivate('wrongP@$$');
-    $this->assertLoginStatusIs(AuthManager::SESSION_INACTIVE,'Session should still be inactive');
+    $this->assertLoginStatusIs(AuthSession::STATUS_INACTIVE,'Session should still be inactive');
   }
   
   
   public function assertLoginStatusIs($status, $message=null) {
-    $this->assertSame(
-        $status,
-        $this->auth->getLoginStatus(),
-        $message
-    );
+    $this->assertTrue($this->auth->isLoginStatus($status), $message);
   }
   protected function login() {
     $this->auth->newUser('tempcke','P@ssW0rd','tempcke@foobar.com');

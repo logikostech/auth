@@ -26,6 +26,14 @@ class Session {
   const INDEX_USERAGENT  = 'agent';
   const INDEX_ISACTIVE   = 'active';
   
+  
+  # session/login status
+  const STATUS_VALID        = 1;
+  const STATUS_NOT_SET      = 0;
+  const STATUS_EXPIRED      = -1;
+  const STATUS_HIJACKED     = -2;
+  const STATUS_INACTIVE     = -3;
+  
   public function __construct(AuthManager $auth, SessionAdapter $session) {
     $this->auth    = $auth;
     $this->session = $session;
@@ -50,6 +58,22 @@ class Session {
     return $this->getData()->get($index, $defaultValue);
   }
   
+  public function getSessionStatus() {
+    if ($this->isEmpty()) {
+      return self::STATUS_NOT_SET;
+    }
+    if ($this->isExpired()) {
+      return self::STATUS_EXPIRED;
+    }
+    if (!$this->isActive()) {
+      return self::STATUS_INACTIVE;
+    }
+    if ($this->isHijackAtempt()) {
+      return self::STATUS_HIJACKED;
+    }
+    return self::STATUS_VALID;
+  }
+  
   public function create(UserModelInterface $user) {
     $data = [
         self::INDEX_USERID     => $user->getUserId(),
@@ -68,19 +92,6 @@ class Session {
   }
   public function isEmpty() {
     return $this->getData()->count() === 0;
-  }
-  public function isValid() {
-    static $cache;
-    if (!$cache) {
-      if (!$this->isEmpty()) {
-        if ($this->isActive()) {
-          
-          $this->set(self::INDEX_LASTACTIVE,time());
-          return true;
-        }
-      }
-    }
-    return false;
   }
   public function isActive() {
     return $this->get(self::INDEX_ISACTIVE,false);

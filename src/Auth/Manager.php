@@ -48,13 +48,6 @@ class Manager extends Module {
   const ATTR_SESSION_TIMEOUT = 'A200'; // seconds inactive to trigger timeout
   const ATTR_WORKFACTOR      = 'A101'; // int 4-32, higher numbers increase the time it takes to create and check password hashes, longer check times makes password cracking shower/harder
   
-  # session/login status
-  const SESSION_VALID        = 1;
-  const SESSION_NOT_SET      = 0;
-  const SESSION_EXPIRED      = -1;
-  const SESSION_HIJACKED     = -2;
-  const SESSION_INACTIVE     = -3;
-  
   
   public final function __construct($options=null) {
     if ($options instanceof UserModelInterface) {
@@ -219,21 +212,11 @@ class Manager extends Module {
     return $status > 0;
   }
   public function getLoginStatus() {
-    if ($this->getSession()->isEmpty()) {
-      return self::SESSION_NOT_SET;
-    }
-    if ($this->getSession()->isExpired()) {
-      return self::SESSION_EXPIRED;
-    }
-    if (!$this->getSession()->isActive()) {
-      return self::SESSION_INACTIVE;
-    }
-    if ($this->getSession()->isHijackAtempt()) {
-      return self::SESSION_HIJACKED;
-    }
-    return self::SESSION_VALID;
+    return $this->getSession()->getSessionStatus();
   }
-
+  public function isLoginStatus($status) {
+    return $this->getLoginStatus() === $status;
+  }
   public function getUserId() {
     return $this->getSession()->getUserId();
   }
