@@ -48,6 +48,12 @@ class Manager extends Module {
   const ATTR_SESSION_TIMEOUT = 'A200'; // seconds inactive to trigger timeout
   const ATTR_WORKFACTOR      = 'A101'; // int 4-32, higher numbers increase the time it takes to create and check password hashes, longer check times makes password cracking shower/harder
   
+  # session/login status
+  const SESSION_VALID        = 1;
+  const SESSION_NOT_SET      = 0;
+  const SESSION_EXPIRED      = -1;
+  const SESSION_HIJACKED     = -2;
+  const SESSION_INACTIVE     = -3;
   
   public final function __construct($options=null) {
     if ($options instanceof UserModelInterface) {

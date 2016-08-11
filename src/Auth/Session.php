@@ -26,14 +26,6 @@ class Session {
   const INDEX_USERAGENT  = 'agent';
   const INDEX_ISACTIVE   = 'active';
   
-  
-  # session/login status
-  const STATUS_VALID        = 1;
-  const STATUS_NOT_SET      = 0;
-  const STATUS_EXPIRED      = -1;
-  const STATUS_HIJACKED     = -2;
-  const STATUS_INACTIVE     = -3;
-  
   public function __construct(AuthManager $auth, SessionAdapter $session) {
     $this->auth    = $auth;
     $this->session = $session;
@@ -60,18 +52,18 @@ class Session {
   
   public function getSessionStatus() {
     if ($this->isEmpty()) {
-      return self::STATUS_NOT_SET;
+      return AuthManager::SESSION_NOT_SET;
     }
     if ($this->isExpired()) {
-      return self::STATUS_EXPIRED;
+      return AuthManager::SESSION_EXPIRED;
     }
     if (!$this->isActive()) {
-      return self::STATUS_INACTIVE;
+      return AuthManager::SESSION_INACTIVE;
     }
     if ($this->isHijackAtempt()) {
-      return self::STATUS_HIJACKED;
+      return AuthManager::SESSION_HIJACKED;
     }
-    return self::STATUS_VALID;
+    return AuthManager::SESSION_VALID;
   }
   
   public function create(UserModelInterface $user) {
