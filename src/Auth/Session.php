@@ -29,6 +29,7 @@ class Session {
   public function __construct(AuthManager $auth, SessionAdapter $session) {
     $this->auth    = $auth;
     $this->session = $session;
+    $this->session->start();
     $this->updateLastActive();
   }
   
