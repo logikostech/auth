@@ -100,7 +100,13 @@ class Session {
     if (!$this->isActive()) {
       return null;
     }
+    if ($this->isFromLocalHost()) {
+      return false;
+    }
     return !$this->remoteAddrMatch() || !$this->userAgentMatch();
+  }
+  protected function isFromLocalHost() {
+    return $this->auth->getServerAttr('SERVER_ADDR') == $this->auth->getServerAttr('REMOTE_ADDR');
   }
   protected function remoteAddrMatch() {
     return $this->auth->getServerAttr('REMOTE_ADDR')     === $this->get(self::INDEX_REMOTEADDR);
