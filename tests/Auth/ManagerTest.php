@@ -1,5 +1,4 @@
 <?php
-
 namespace Logikos\Tests\Auth;
 
 use Logikos\Auth\BadTokenException;
